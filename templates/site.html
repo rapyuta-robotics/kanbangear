@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}{{ site.name }} - Site Details{% endblock %}
+
+{% block extra_head %}
+<script src="https://unpkg.com/alpinejs" defer></script>
+<!-- Google Translate and custom styles -->
+<div id="google_translate_element" style="display:none;"></div>
+<div class="mt-8 w-full flex justify-center">
+    <button onclick="translateToJapanese()" class="bg-blue-700 hover:bg-blue-900 text-white font-bold py-2 px-4 rounded shadow-md">
+        🌐 Translate to Japanese<br>日本語に翻訳する
+    </button>
+</div>
+<script>
+function translateToJapanese() {
+    document.cookie = "googtrans=/en/ja; path=/";
+    location.reload();
+}
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({
+        pageLanguage: 'en',
+        includedLanguages: 'ja',
+        layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+    }, 'google_translate_element');
+}
+</script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<style>
+body > .skiptranslate { position: fixed !important; top: 0px !important; width: 100% !important; z-index: 9999 !important;}
+iframe.goog-te-banner-frame { position: fixed !important; top: 0px !important; width: 100% !important; z-index: 9999 !important;}
+body { top: 0px !important; position: relative !important;}
+</style>
+{% endblock %}
+
+{% block content %}
+<img src="/static/RR_logo.png" alt="Rapyuta Robotics" class="w-16 sm:w-24 absolute top-4 right-4">
+<h1 class="text-5xl font-extrabold text-transparent bg-gradient-to-b from-black via-black/80 to-black bg-clip-text relative p-6 rounded-xl mb-4 before:absolute before:inset-0 before:bg-white/10 before:backdrop-blur-2xl before:rounded-xl before:shadow-2xl before:shadow-red/50 before:border before:border-red/20 before:-z-10">
+    {{ site.name }}
+</h1>
+<a href="/download_csv/{{ site_name }}" class="bg-gray-900 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:scale-105 transition-all mb-6">
+    📥 Download CSV
+</a>
+<div class="w-full max-w-6xl space-y-6 shadow-2xl shadow-black p-6 rounded-lg bg-white overflow-auto">
+    {% for robot in site.robots %}
+    <div x-data="{ open: false }" class="rounded-xl overflow-hidden shadow-md bg-gray-50 border border-gray-300">
+        <!-- Header -->
+        <div 
+            @click="open = !open"
+            class="flex justify-between items-center bg-[#030303] text-white text-lg font-bold px-6 py-4 cursor-pointer select-none"
+        >
+        <!-- Centered Robot Name -->
+        <span class="flex-1 text-center">{{ robot.name }}</span>
+            <span x-text="open ? '−' : '+'" class="text-2xl font-extrabold ml-4"></span>
+        </div>
+        <div x-show="open" x-transition x-cloak class="overflow-hidden transition-all duration-300 ease-in-out">
+            <table class='w-full border-collapse mt-2'>
+                <thead>
+                    <tr class='bg-black text-white'>
+                        <th class='p-3'>Name</th>
+                        <th class='p-3'>Type</th>
+                        <th class='p-3'>Status</th>
+                        <th class='p-3'>Replacement Count</th>
+                        <th class='p-3'>Repair Count</th>
+                        <th class='p-3'>Comments</th>
+                        <th class='p-3'>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hw in robot.hardware %}
+                    <tr class='bg-white text-gray-800 hover:bg-red-300 transition duration-200'>
+                        <td class='p-3 border border-red-400'>{{ hw.name }}</td>
+                        <td class='p-3 border border-red-400'>{{ hw.type }}</td>
+                        <td class='p-3 border border-red-400'>
+                            <select id='status_{{ hw.id }}' class='bg-red-200 text-gray-900 border border-red-500 p-2 rounded-lg'>
+                                <option value='Active' {% if hw.status == "Active" %}selected{% endif %}>Active</option>
+                                <option value='Repair' {% if hw.status == "Repair" %}selected{% endif %}>Repair</option>
+                            </select>
+                        </td>
+                        <td class='p-3 border border-red-400'>
+                            <input type='number' value='{{ hw.replacement_count }}'
+                                id='replace_count_{{ hw.id }}' class='bg-red-200 text-gray-900 border border-blue-500 p-2 rounded-lg w-16 text-center'>
+                        </td>
+                        <td class='p-3 border border-red-400'>
+                            <input type='number' value='{{ hw.repair_count }}'
+                                id='repair_count_{{ hw.id }}' class='bg-red-200 text-gray-900 border border-blue-500 p-2 rounded-lg w-16 text-center'>
+                        </td>
+                        <td class='p-3 border border-red-400'>
+                            <input type='text' value='{{ hw.comments or "" }}'
+                                id='comments_{{ hw.id }}' class='bg-red-200 text-gray-900 border border-blue-500 p-2 rounded-lg w-32 text-center'>
+                        </td>
+                        <td class='p-3 border border-red-400'>
+                            <button onclick='authenticateAndSave({{ hw.id }})'
+                                class='bg-black hover:bg-red-700 text-white font-bold py-2 px-5 rounded-lg transition-all'>
+                                Save
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Auth Modal and Overlay -->
+<div id="authModal" class="modal" style="display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%); width: 350px; padding: 20px; background: rgba(20, 0, 0, 0.85); border-radius: 12px; box-shadow: 0 0 15px rgba(255, 0, 51, 0.8); border: 2px solid rgba(255, 0, 51, 0.8); z-index: 1000; opacity: 0; transition: opacity 0.3s ease-in-out;">
+    <h3 style="text-align: center; font-family: Orbitron, sans-serif; color: #ff0033; text-shadow: 0 0 8px #ff0033;">
+        🔓🔥Access Required🔥🔓
+    </h3>
+    <input type="text" id="authUsername" placeholder="Enter username" required style="width: 100%; margin-bottom: 10px; padding: 12px; border: 2px solid #ff0033; border-radius: 8px; font-size: 14px; color: #ff0033; background: rgba(20, 0, 0, 0.6); outline: none; text-align: center; box-shadow: 0 0 8px #ff0033;">
+    <input type="password" id="authPassword" placeholder="Enter password" required style="width: 100%; margin-bottom: 10px; padding: 12px; border: 2px solid #ff0033; border-radius: 8px; font-size: 14px; color: #ff0033; background: rgba(20, 0, 0, 0.6); outline: none; text-align: center; box-shadow: 0 0 8px #ff0033;">
+    <button onclick="submitAuthentication()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #ff0033, #cc0000); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 10px #ff0033;">
+        Submit
+    </button>
+    <button onclick="closeAuthModal()" style="width: 100%; padding: 12px; margin-top: 5px; background: linear-gradient(135deg, #660000, #990000); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 10px #990000;">
+        Cancel
+    </button>
+</div>
+<div id="authOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999;"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+let currentHwId = null;
+function authenticateAndSave(hwId) {
+    if (!hwId) {
+        alert("Error: No hardware ID selected.");
+        return;
+    }
+    currentHwId = hwId;
+    document.getElementById("authModal").style.display = "block";
+    document.getElementById("authOverlay").style.display = "block";
+    setTimeout(() => document.getElementById("authModal").style.opacity = "1", 50);
+    setTimeout(() => document.getElementById("authUsername").focus(), 100);
+    document.getElementById("authModal").removeEventListener("keypress", enterKeyHandler);
+    document.getElementById("authModal").addEventListener("keypress", enterKeyHandler);
+}
+function enterKeyHandler(event) {
+    if (event.key === "Enter") {
+        submitAuthentication();
+    }
+}
+function closeAuthModal() {
+    document.getElementById("authModal").style.opacity = "0";
+    setTimeout(() => {
+        document.getElementById("authModal").style.display = "none";
+        document.getElementById("authOverlay").style.display = "none";
+    }, 300);
+}
+function submitAuthentication() {
+    let username = document.getElementById("authUsername").value;
+    let password = document.getElementById("authPassword").value;
+    if (!username || !password) {
+        alert("Please enter username and password.");
+        return;
+    }
+    let replaceCountElem = document.getElementById(`replace_count_${currentHwId}`);
+    let repairCountElem = document.getElementById(`repair_count_${currentHwId}`);
+    let statusElem = document.getElementById(`status_${currentHwId}`);
+    let commentsElem = document.getElementById(`comments_${currentHwId}`); // New
+    if (!replaceCountElem || !repairCountElem || !statusElem || !commentsElem) {
+        alert("Error: Some input fields are missing.");
+        return;
+    }
+    let replaceCount = replaceCountElem.value;
+    let repairCount = repairCountElem.value;
+    let status = statusElem.value;
+    let comments = commentsElem.value; // New
+
+    closeAuthModal();
+    fetch('/update_hardware', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            hardware_id: currentHwId,
+            replacement_count: replaceCount,
+            repair_count: repairCount,
+            status: status,
+            comments: comments // New
+        })
+    })
+    .then(response => response.json())
+    .then(data => { console.log('Success:', data); })
+    .catch((error) => { console.error('Error:', error); });
+}
+    window.authenticateAndSave = authenticateAndSave;
+    window.submitAuthentication = submitAuthentication;
+    window.closeAuthModal = closeAuthModal;
+});
+</script>  
+{% endblock %}

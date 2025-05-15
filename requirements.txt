@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sqlalchemy
+jinja2
+python-multipart
+fastapi-limiter
+redis
+prometheus-fastapi-instrumentator
+bcrypt
+pydantic
+

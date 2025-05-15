@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Site Details{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="backdrop-blur-3xl border border-white/10 shadow-xl text-white/90 min-h-screen flex flex-col p-6 bg-white rounded-lg shadow-[0_0_20px_rgba(0,0,0,0.9)]">
+    <nav class="w-full mb-6 mt-6">
+        <a href="/sites" class="px-4 py-2 bg-black hover:bg-red-700 text-white font-bold rounded shadow transition duration-300">All Sites</a>
+    </nav>
+    
+    <div class="flex-grow flex flex-col items-center justify-center">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

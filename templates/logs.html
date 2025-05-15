@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hardware Maintenance Logs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            background-color: #1f1f1f;
+            color: white;
+            text-align: left;
+            padding: 12px;
+        }
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #ddd;
+        }
+        .refresh-btn, .filter-btn {
+            padding: 10px 15px;
+            background-color: #030303;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .refresh-btn:hover, .filter-btn:hover {
+            background-color: #cf0f0f;
+        }
+        .filter-container {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+        }
+        .filter-input {
+            padding: 8px;
+            width: 300px;
+            margin-right: 10px;
+        }
+        .filter-options {
+            margin: 10px 0;
+        }
+        .filter-checkbox {
+            margin-right: 5px;
+        }
+        .filter-label {
+            margin-right: 20px;
+        }
+        
+        /* Google Translate Widget */
+        #google_translate_element {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Google Translate Widget -->
+    <div id="google_translate_element"></div>
+    <script type="text/javascript">
+    function googleTranslateElementInit() {
+        new google.translate.TranslateElement({pageLanguage: 'en'}, 'google_translate_element');
+    }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    
+    <h1>Hardware Maintenance Logs</h1>
+    
+    <div class="filter-container">
+        <input type="text" id="filterInput" class="filter-input" placeholder="Filter logs (e.g., 'status', 'repair')">
+        <button class="filter-btn" onclick="applyFilter()">Filter</button>
+        <button class="filter-btn" onclick="clearFilter()">Clear</button>
+    </div>
+    
+    <div class="filter-options">
+        <input type="checkbox" id="hideAuth" class="filter-checkbox" checked>
+        <label for="hideAuth" class="filter-label">Hide Authentication Logs</label>
+        
+        <input type="checkbox" id="hideStartup" class="filter-checkbox" checked>
+        <label for="hideStartup" class="filter-label">Hide Startup Logs</label>
+        
+        <input type="checkbox" id="showChangesOnly" class="filter-checkbox">
+        <label for="showChangesOnly" class="filter-label">Show Only Change Logs</label>
+    </div>
+    
+    <button class="refresh-btn" onclick="window.location.reload()">Refresh Logs</button>
+    <button class="refresh-btn" onclick="downloadFilteredTableAsCSV('logs_export.csv')">Download CSV</button>
+    
+    <table id="logsTable">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Hardware</th>
+                <th>Robot</th>
+                <th>Site</th>
+                <th>Changes</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr class="log-row" data-log-text="{{ log.username }} {{ log.hardware }} {{ log.robot }} {{ log.site }} {{ log.changes }} {{ log.timestamp }}">
+                <td>{{ log.username }}</td>
+                <td>{{ log.hardware }}</td>
+                <td>{{ log.robot }}</td>
+                <td>{{ log.site }}</td>
+                <td>{{ log.changes }}</td>
+                <td>{{ log.timestamp }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <script>
+        // Function to filter logs
+        function applyFilter() {
+            const filterText = document.getElementById('filterInput').value.toLowerCase();
+            const hideAuth = document.getElementById('hideAuth').checked;
+            const hideStartup = document.getElementById('hideStartup').checked;
+            const showChangesOnly = document.getElementById('showChangesOnly').checked;
+            
+            const rows = document.querySelectorAll('#logsTable tbody tr');
+            
+            rows.forEach(row => {
+                const logText = row.getAttribute('data-log-text').toLowerCase();
+                let shouldShow = true;
+                
+                // Apply text filter if provided
+                if (filterText && !logText.includes(filterText)) {
+                    shouldShow = false;
+                }
+                
+                // Apply checkbox filters
+                if (hideAuth && logText.includes('authenticating user:')) {
+                    shouldShow = false;
+                }
+                
+                if (hideStartup && logText.includes('application started')) {
+                    shouldShow = false;
+                }
+                
+                if (showChangesOnly && !logText.includes('changes:')) {
+                    shouldShow = false;
+                }
+                
+                // Show or hide the row
+                row.style.display = shouldShow ? '' : 'none';
+            });
+        }
+        
+        // Function to clear filters
+        function clearFilter() {
+            document.getElementById('filterInput').value = '';
+            document.getElementById('hideAuth').checked = true;
+            document.getElementById('hideStartup').checked = true;
+            document.getElementById('showChangesOnly').checked = false;
+            
+            applyFilter();
+        }
+        
+        // Function to download filtered table as CSV with translated content
+        function downloadFilteredTableAsCSV(filename) {
+            // Get the table element
+            const table = document.getElementById('logsTable');
+            
+            // Get all visible rows (filtered rows)
+            const rows = Array.from(table.querySelectorAll('tbody tr'))
+                .filter(row => row.style.display !== 'none');
+                
+            // Get headers - get the actual displayed text (which might be translated)
+            const headers = Array.from(table.querySelectorAll('thead th'))
+                .map(th => th.innerText.trim());
+                
+            // Create CSV content
+            let csvContent = headers.join(',') + '\n';
+            
+            // Add row data - get the actual displayed text (which might be translated)
+            rows.forEach(row => {
+                const rowData = Array.from(row.querySelectorAll('td'))
+                    .map(cell => {
+                        // Get the displayed text (which might be translated)
+                        let content = cell.innerText.trim();
+                        // Handle commas and quotes in cell content
+                        if (content.includes(',') || content.includes('"') || content.includes('\n')) {
+                            content = '"' + content.replace(/"/g, '""') + '"';
+                        }
+                        return content;
+                    });
+                csvContent += rowData.join(',') + '\n';
+            });
+            
+            // Add UTF-8 BOM to ensure proper encoding of Japanese characters
+            const BOM = "\uFEFF";
+            
+            // Create download link with BOM for UTF-8
+            const encodedUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(BOM + csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            
+            // Trigger download
+            link.click();
+            
+            // Clean up
+            document.body.removeChild(link);
+        }
+        
+        // Apply initial filtering
+        document.addEventListener('DOMContentLoaded', applyFilter);
+    </script>
+</body>
+</html>

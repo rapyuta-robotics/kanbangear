@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Creation Form</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #e60000; /* Black background */
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: auto; /* Enables scrolling */
+            height: auto; /* Adjusts height dynamically */
+        }
+        .container {
+            width: 70%;
+            max-width: 900px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(255, 107, 107, 0.5);
+            border: 1px solid #ff6b6b;
+            text-align: center;
+            display: flex;
+            flex-direction: column; /* Keeps elements stacked */
+            align-items: center; /* Centers content */
+            justify-content: flex-start; /* Prevents unwanted shifting */
+            max-height: 90vh; /* Prevents the container from taking full screen */
+            overflow-y: auto; /* Allows scrolling within the container */
+            height: auto; /* Let it expand as needed */
+            max-height: none; /* Remove height restrictions */
+        }
+        .container h2, 
+        .container h3, 
+        .container h4, 
+        .container label, 
+        .container textarea{
+            color: black !important;
+        }
+        input, button, textarea {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ff6b6b;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 400px;
+            background: #fff5f5;
+            color: black;
+            text-align: center;
+        }
+        button {
+            background: #1a1a1a;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+            border: none;
+        }
+        button:hover {
+            background: #e04e4e;
+        }
+        table {
+            width: 100%;
+            margin-top: 10px;
+            border-collapse: collapse;
+            background: #fff5f5;
+            color: black;
+            border: 1px solid #ff6b6b;
+        }
+        th, td {
+            border: 1px solid #ff6b6b;
+            padding: 8px;
+            text-align: left;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        .logo {
+            display: block;
+            margin: 0 auto 20px auto;
+            max-width: 150px;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <img src="RR_logo.png" alt="Rapyuta Robotics" class="logo">
+    <h2>Create Site Data</h2>
+    
+    <label for="site_name">Site Name:</label>
+    <input type="text" id="site_name" placeholder="Enter site name">    
+    
+    <h3>Robots</h3>
+    <button onclick="addRobot()">Add Robot</button>
+    <div id="robots_container"></div>
+
+    <div id="parts_section" class="hidden">
+        <h3>Add Individual Part</h3>
+        <button onclick="addIndividualPart()">Add Part</button>
+        <button onclick="resetParts()">Reset Parts</button>
+
+        <h3>Paste Hardware List</h3>
+        <textarea id="hardware_list" rows="5" placeholder="Paste list here (one per line)"></textarea>
+        <button onclick="processHardwareList()">Add Parts from List</button>
+    </div>
+
+    <div class="button-container">
+        <button onclick="generateJSON()">Generate JSON</button>
+        <button onclick="downloadJSON()">Download JSON</button>
+        <button onclick="resetAll()">Reset All</button>
+    </div>
+    
+    <h3>Generated JSON:</h3>
+    <textarea id="json_output" rows="10" style="width: 100%;"></textarea>
+</div>
+
+<script>
+    let robotCount = 0;
+    let lastRobotDiv = null;
+
+    function addRobot() {
+        robotCount++;
+        let robotDiv = document.createElement("div");
+        robotDiv.innerHTML = `
+            <h4>Robot ${robotCount}</h4>
+            <label>Robot Name:</label>
+            <input type="text" class="robot_name" placeholder="Enter robot name" oninput="togglePartsSection()">
+            <div class="parts_container"></div>
+        `;
+        document.getElementById("robots_container").appendChild(robotDiv);
+        lastRobotDiv = robotDiv;
+    }
+
+    function togglePartsSection() {
+        if (lastRobotDiv) {
+            let robotName = lastRobotDiv.querySelector(".robot_name").value;
+            document.getElementById("parts_section").classList.toggle("hidden", robotName.trim() === "");
+        }
+    }
+
+    function addIndividualPart() {
+        if (!lastRobotDiv) {
+            alert("Add a robot first!");
+            return;
+        }
+        addPart(lastRobotDiv, "");
+    }
+
+    function addPart(robotDiv, partName) {
+        let partsDiv = robotDiv.querySelector(".parts_container");
+        let partDiv = document.createElement("div");
+        partDiv.innerHTML = `
+            <table>
+                <tr>
+                    <td><input type="text" class="part_name" placeholder="Part Name" value="${partName}"></td>
+                    <td><input type="text" class="part_type" placeholder="Type" value="Component"></td>
+                    <td><input type="text" class="part_status" placeholder="Status" value="Active"></td>
+                    <td><input type="number" class="replacement_count" placeholder="Count" value="0"></td>
+                    <td><input type="number" class="repair_count" placeholder="Count" value="0"></td>
+                    <td><input type="text" class="comments" placeholder="Comments"></td>
+                    <td><button onclick="deletePart(this)">Delete</button></td>
+                </tr>
+            </table>
+        `;
+        partsDiv.appendChild(partDiv);
+    }
+
+    function processHardwareList() {
+        if (!lastRobotDiv) {
+            alert("Add a robot first!");
+            return;
+        }
+        let list = document.getElementById("hardware_list").value.trim().split("\n");
+        list.forEach(partName => {
+            if (partName.trim()) addPart(lastRobotDiv, partName.trim());
+        });
+    }
+
+    function generateJSON() {
+        let siteName = document.getElementById("site_name").value;
+        let robots = [];
+
+        let robotDivs = document.querySelectorAll("#robots_container > div");
+        if (robotDivs.length === 0) {
+            alert("Please add at least one robot before generating JSON.");
+            return;
+        }
+
+        robotDivs.forEach(robotDiv => {
+            let robotNameInput = robotDiv.querySelector(".robot_name");
+            if (!robotNameInput) return; // Prevents null error
+            let robotName = robotNameInput.value.trim();
+            
+            let hardware = [];
+            let partDivs = robotDiv.querySelectorAll(".parts_container > div");
+
+            partDivs.forEach(partDiv => {
+                let partNameInput = partDiv.querySelector(".part_name");
+                let partTypeInput = partDiv.querySelector(".part_type");
+                let partStatusInput = partDiv.querySelector(".part_status");
+                let replacementCountInput = partDiv.querySelector(".replacement_count");
+                let repairCountInput = partDiv.querySelector(".repair_count");
+                let commentsInput = partDiv.querySelector(".comments");
+
+
+                // Ensure inputs exist before reading their values
+                if (!partNameInput || !partTypeInput || !partStatusInput || !replacementCountInput || !repairCountInput) return;
+
+                hardware.push({
+                    "name": partNameInput.value.trim(),
+                    "type": partTypeInput.value.trim(),
+                    "status": partStatusInput.value.trim(),
+                    "replacement_count": parseInt(replacementCountInput.value) || 0,
+                    "repair_count": parseInt(repairCountInput.value) || 0,
+                    "comments": commentsInput ? commentsInput.value.trim() : ""
+                });
+            });
+
+            robots.push({ "name": robotName, "hardware": hardware });
+        });
+
+        let jsonData = { "site": { "name": siteName, "robots": robots } };
+        document.getElementById("json_output").value = JSON.stringify(jsonData, null, 4);
+    }
+
+
+    function downloadJSON() {
+        let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(document.getElementById("json_output").value);
+        let downloadAnchor = document.createElement("a");
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "site_data.json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        document.body.removeChild(downloadAnchor);
+    }
+
+    function deletePart(button) {
+        let row = button.closest("tr");
+        row.parentNode.removeChild(row);
+    }
+
+    function resetParts() {
+        document.querySelectorAll(".parts_container").forEach(partsDiv => {
+            partsDiv.innerHTML = "";
+        });
+        document.getElementById("hardware_list").value = "";
+    }
+
+    function resetAll() {
+        document.getElementById("site_name").value = "";
+        document.getElementById("robots_container").innerHTML = "";
+        document.getElementById("parts_section").classList.add("hidden");
+        document.getElementById("json_output").value = "";
+        robotCount = 0;
+        lastRobotDiv = null;
+    }
+</script>
+
+</body>
+</html>
+

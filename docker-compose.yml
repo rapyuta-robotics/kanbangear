@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./site_robot_hardware.db:/app/site_robot_hardware.db
+      - .:/app  # For development hot-reload
+    environment:
+      - DATABASE_URL=sqlite:///site_robot_hardware.db
+      - REDIS_HOST=redis
+      - LOG_LEVEL=INFO
+    depends_on:
+      - redis
+    restart: always
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:

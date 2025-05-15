@@ -1,0 +1,14 @@
+[Unit]
+Description=FastAPI App
+After=network.target
+
+[Service]
+Type=simple
+User=dinesh
+WorkingDirectory=/home/dinesh/pyProject_secure
+ExecStart=/home/dinesh/.local/bin/uvicorn main:app --host 0.0.0.0 --port 8080
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+

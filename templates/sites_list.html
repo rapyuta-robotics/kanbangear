@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}All Sites{% endblock %}
+{% block extra_head %}
+<script src="https://unpkg.com/alpinejs" defer></script>
+<!-- Google Translate and custom styles -->
+<div id="google_translate_element" style="display:none;"></div>
+<div class="fixed bottom-10 sm:bottom-40 left-1/2 transform -translate-x-1/2 bg-white z-50">
+    <button onclick="translateToJapanese()" class="bg-blue-700 hover:bg-blue-900 text-white font-bold py-2 px-4 rounded-xl shadow-md">
+        🌐 Translate to Japanese<br>日本語に翻訳する
+    </button>
+</div>
+<script>
+function translateToJapanese() {
+    document.cookie = "googtrans=/en/ja; path=/";
+    location.reload();
+}
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({
+        pageLanguage: 'en',
+        includedLanguages: 'ja',
+        layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+    }, 'google_translate_element');
+}
+</script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<style>
+body > .skiptranslate { position: fixed !important; top: 0px !important; width: 100% !important; z-index: 9999 !important;}
+iframe.goog-te-banner-frame { position: fixed !important; top: 0px !important; width: 100% !important; z-index: 9999 !important;}
+body { top: 0px !important; position: relative !important;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="relative pt-20 px-4 sm:px-6 lg:px-8 text-center">
+    <h1 class="text-center px-2 py-4 text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight opacity-90">
+        <!-- Glossy Black "Kanban" -->
+        <span class="text-transparent bg-clip-text"
+              style="
+                background-image: linear-gradient(to top, #000000 40%, #1c1b1b 50%, #000000 60%);
+                text-shadow: 1px 1px 3px rgba(0,0,0,0.7), -1px -1px 1px rgba(44, 41, 41, 0.2);
+                filter: drop-shadow(0 0 3px rgba(0,0,0,0.3));
+              ">
+          Kanban
+        </span>
+        
+        <!-- Glossy Red "Tool" -->
+        <span class="text-transparent bg-clip-text"
+              style="
+                background-image: linear-gradient(to top, #dc2626 40%, #b91c1c 50%, #dc2626 60%);
+                text-shadow: 1px 1px 3px rgba(202, 17, 17, 0.8), -1px -1px 1px rgba(255, 100, 100, 0.2);
+                filter: drop-shadow(0 0 3px rgba(255,0,0,0.3));
+              ">
+          Tool
+        </span>
+      </h1>
+</div>
+<img src="/static/RR_logo.png" alt="Rapyuta Robotics" class="w-16 sm:w-24 fixed top-4 right-4">
+<div class="flex justify-center items-center w-full h-[calc(100vh-4rem)] pb-40"> 
+<div class="w-full max-w-xl mx-auto mt-10 p-8 bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,0,0,0.6)]">
+
+    <h2 class="text-2xl font-bold mb-6 text-center text-black/90">Select a Warehouse 🏛️ </h2>
+
+    <form id="site-selector-form" class="space-y-4">
+        <div>
+            <label for="site-selector" class="block text-sm font-medium text-white/70 mb-2">Choose a site:</label>
+            <select
+                class="w-full px-4 py-3 text-white bg-gray-900 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200"
+                id="site-selector" name="site">
+                <option value="">-- Select a Site --</option>
+                {% for site in sites %}
+                    <option value="{{ site.name }}">{{ site.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+</div>
+</div>
+
+<script>
+    document.getElementById('site-selector').addEventListener('change', function () {
+        var selectedSite = this.value;
+        if (selectedSite) {
+            window.location.href = '/site/' + selectedSite;
+        }
+    });
+</script>
+{% endblock %}
